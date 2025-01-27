@@ -1,7 +1,7 @@
 # Use Node.js 18 Alpine-based image
 FROM node:18-alpine
 
-# Install essential utilities first (git, curl, etc.)
+# Step 1: Install essential utilities (git, curl, bash, etc.)
 RUN apk update && apk add --no-cache \
     python3 \
     py3-pip \
@@ -11,20 +11,30 @@ RUN apk update && apk add --no-cache \
     bash \
     && rm -rf /var/cache/apk/*
 
-# Install build dependencies (compiler, libraries)
+# Step 2: Install basic build dependencies (start simple)
 RUN apk add --no-cache \
     build-base \
     libffi-dev \
     unzip \
+    && rm -rf /var/cache/apk/*
+
+# Step 3: Install Ruby and Golang (additional dependencies)
+RUN apk add --no-cache \
     ruby \
     golang \
     && rm -rf /var/cache/apk/*
 
-# Install Maven separately (if still required)
+# Step 4: Test if each step works individually (installing Maven separately)
 RUN apk add --no-cache maven && rm -rf /var/cache/apk/*
 
-# Install Terraform from HashiCorp repository (if required)
+# Step 5: Test if Terraform works on Alpine
 RUN apk add terraform && rm -rf /var/cache/apk/*
 
-# Install Docker CLI (docker-ce-cli)
-RUN curl -fsSL https://download.docker.com/linux/alpine/gpg | gpg
+# Step 6: Install Snyk CLI globally
+RUN npm install -g snyk
+
+# Expose default working directory for scans
+WORKDIR /workspace
+
+# Default command to display Snyk version and instructions
+CMD ["sh", "-c", "echo 'Snyk CLI is installed. Use it in your Jenkins pipeline or manually from this container.' && snyk --version"]
