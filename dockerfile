@@ -1,12 +1,22 @@
 # Base image with Node.js (Slim Debian-based)
 FROM node:18-slim
 
+# Add OpenJDK and other necessary repositories
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gnupg \
+    lsb-release \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Java (OpenJDK 11)
+RUN apt-get update && apt-get install -y openjdk-11-jdk
+
 # Install necessary dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     git \
-    curl \
     jq \
     build-essential \
     libffi-dev \
@@ -15,7 +25,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ruby-full \
     golang \
     php-cli \
-    && apt-get install -y openjdk-11-jdk \
     && pip3 install --upgrade pip \
     && pip3 install ansible-lint cfn-lint checkov \
     && gem install bundler \
@@ -24,9 +33,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list \
     && apt-get update && apt-get install -y terraform \
     && rm -rf /var/lib/apt/lists/*
-
-# Add OpenJDK repository (this is the fix)
-RUN apt-get install -y openjdk-11-jdk --no-install-recommends
 
 # Install Docker CLI (docker-ce-cli)
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
