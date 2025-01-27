@@ -6,17 +6,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     git \
-    openjdk-11-jdk \
-    maven \
-    ruby-full \
-    golang \
-    php-cli \
     curl \
     jq \
     docker-ce-cli \
     build-essential \
     libffi-dev \
     unzip \
+    && apt-get install -y openjdk-11-jdk \
+    && apt-get install -y maven \
+    && apt-get install -y ruby-full \
+    && apt-get install -y golang \
+    && apt-get install -y php-cli \
     && pip3 install --upgrade pip \
     && pip3 install ansible-lint cfn-lint checkov \
     && gem install bundler \
