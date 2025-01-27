@@ -1,22 +1,12 @@
-# Base image with Node.js (Slim Debian-based)
-FROM node:18-slim
-
-# Add OpenJDK and other necessary repositories
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    gnupg \
-    lsb-release \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Java (OpenJDK 11)
-RUN apt-get update && apt-get install -y openjdk-11-jdk
+# Base image with Node.js (Full Debian-based)
+FROM node:18
 
 # Install necessary dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     git \
+    curl \
     jq \
     build-essential \
     libffi-dev \
@@ -25,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ruby-full \
     golang \
     php-cli \
+    openjdk-11-jdk \
     && pip3 install --upgrade pip \
     && pip3 install ansible-lint cfn-lint checkov \
     && gem install bundler \
