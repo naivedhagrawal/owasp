@@ -1,11 +1,12 @@
 FROM debian:stable-slim
 
-WORKDIR /app
+# Set working directory
+WORKDIR /workspace
 
-# Install essential dependencies
+# Install essential dependencies and language toolchains
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    python3 \
+    python3 python3-pip python3-venv \
     make \
     g++ \
     nodejs \
@@ -19,54 +20,46 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     apt-transport-https \
     ca-certificates \
-    software-properties-common \
     gnupg \
     maven \
     gradle \
     wget \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install .NET SDK (using latest LTS)
-RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
+# Install .NET SDK (latest LTS)
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh \
     && chmod +x dotnet-install.sh \
-    && ./dotnet-install.sh --channel lts \ # Use latest LTS
+    && ./dotnet-install.sh --channel lts \
     && rm dotnet-install.sh
 
+# Set environment variables for .NET
 ENV DOTNET_ROOT="/root/.dotnet"
 ENV PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
 
-# Add Docker's official GPG key
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+# Add Docker GPG key and repository for Docker CLI support
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+    > /etc/apt/sources.list.d/docker.list
 
-# Set up the stable repository
-RUN echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+# Install Docker CLI
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    docker-ce-cli \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Docker Engine
-RUN apt-get update && apt-get install -y --no-install-recommends docker-ce docker-ce-cli containerd.io docker-compose-plugin && rm -rf /var/lib/apt/lists/*
+# Install Snyk CLI globally
+RUN npm install -g snyk@latest && npm cache clean --force
 
-# Create a non-root user and group (AFTER Docker installation)
+# Create a non-root user for running Snyk
 RUN groupadd -r snyk && useradd -r -g snyk snyk
 
-# Add snyk user to docker group (AFTER Docker installation)
-RUN usermod -aG docker snyk
-
-# Install Snyk CLI globally (using build argument and cleaning npm cache)
-ARG SNYK_TOKEN
-RUN npm config set '@snyk:registry' 'https://registry.npmjs.org/' \
-    && npm install -g snyk@latest \
-    && npm cache clean --force \
-    && snyk config set token $SNYK_TOKEN
-
-# Switch to the non-root user
+# Switch to non-root user
 USER snyk
-
-# Set working directory
-WORKDIR /app
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD snyk --version || exit 1
 
-# Entrypoint
+# Entrypoint to default to Snyk commands
 ENTRYPOINT ["snyk"]
+
+# Default command
+CMD ["--help"]
