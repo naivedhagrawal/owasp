@@ -8,15 +8,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     jq \
-    docker-ce-cli \
     build-essential \
     libffi-dev \
     unzip \
+    maven \
+    ruby-full \
+    golang \
+    php-cli \
     && apt-get install -y openjdk-11-jdk \
-    && apt-get install -y maven \
-    && apt-get install -y ruby-full \
-    && apt-get install -y golang \
-    && apt-get install -y php-cli \
     && pip3 install --upgrade pip \
     && pip3 install ansible-lint cfn-lint checkov \
     && gem install bundler \
@@ -24,6 +23,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list \
     && apt-get update && apt-get install -y terraform \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Docker CLI (docker-ce-cli)
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list \
+    && apt-get update && apt-get install -y docker-ce-cli \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Snyk CLI globally
