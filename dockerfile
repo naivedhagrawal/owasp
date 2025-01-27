@@ -1,68 +1,59 @@
-FROM node:18-alpine AS build
+FROM debian:stable-slim
 
-# Install required system dependencies for various package managers and compilers
-RUN apk add --no-cache \
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
+    python3 \
     make \
     g++ \
-    python3 \
-    py3-pip \
+    nodejs \
+    npm \
+    default-jre-headless \
+    dotnet-sdk-6.0 \
+    ruby \
+    golang \
     bash \
-    openjdk17 \
     curl \
-    wget \
-    gnupg \
     zip \
-    unzip
+    unzip \
+    apt-transport-https \
+    ca-certificates \
+    software-properties-common \
+    gnupg \
+    maven \
+    gradle \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install snyk CLI
+# Add Docker's official GPG key
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# Set up the stable repository
+RUN echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine (optional, only if needed for Docker-in-Docker)
+RUN apt-get update && apt-get install -y --no-install-recommends docker-ce docker-ce-cli containerd.io docker-compose-plugin && rm -rf /var/lib/apt/lists/*
+
+# Install Snyk CLI globally
 RUN npm install -g snyk@latest
 
-# Create a working directory
+# Create a non-root user and group
+RUN groupadd -r snyk && useradd -r -g snyk snyk
+
+# Add snyk user to docker group (optional, only if needed for Docker-in-Docker)
+RUN usermod -aG docker snyk
+
+# Switch to the non-root user
+USER snyk
+
+# Set working directory (optional - can be overridden by volume mount)
 WORKDIR /app
 
-# Copy project files (this should be optimized in a real-world scenario)
-COPY . .
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD snyk --version || exit 1
 
-# Install dependencies for different project types
-RUN if [ -f "package.json" ]; then npm ci; fi
-RUN if [ -f "yarn.lock" ]; then yarn install --frozen-lockfile; fi
-RUN if [ -f "pom.xml" ]; then mvn dependency:go-offline; fi # Maven
-RUN if [ -f "build.gradle" ]; then ./gradlew dependencies; fi # Gradle
-RUN if [ -f "requirements.txt" ]; then pip3 install -r requirements.txt; fi # Python
-RUN if [ -f "Gemfile" ]; then bundle install; fi # Ruby
-
-# --- Snyk Scan Stage ---
-FROM alpine:latest
-
-# Install required system dependencies for snyk
-RUN apk add --no-cache \
-    bash \
-    curl \
-    gnupg \
-    ca-certificates
-
-# Copy snyk binary from the build stage
-COPY --from=build /usr/local/bin/snyk /usr/local/bin/snyk
-COPY --from=build /app /app
-
-WORKDIR /app
-
-# Set entrypoint to run snyk scan. You can customize the scan targets here.
-ENTRYPOINT ["/usr/local/bin/snyk", "test", "--all-projects", "--severity-threshold=high", "--fail-on=all"]
-
-# Example of running a specific scan target
-# ENTRYPOINT ["/usr/local/bin/snyk", "test", "--file=package.json"]
-
-# Example for container scanning
-# ENTRYPOINT ["/usr/local/bin/snyk", "container", "test", "your-image-name"]
-
-# Example for IaC scanning
-# ENTRYPOINT ["/usr/local/bin/snyk", "iac", "test", "."]
-
-# Example for Code scanning
-# ENTRYPOINT ["/usr/local/bin/snyk", "code", "test", "."]
-
-# Example with authentication (using SNYK_TOKEN environment variable)
-# ENV SNYK_TOKEN="your_snyk_token"
-# ENTRYPOINT ["/usr/local/bin/snyk", "auth", "$SNYK_TOKEN", "&&", "/usr/local/bin/snyk", "test", "--all-projects", "--severity-threshold=high", "--fail-on=all"]
+# Entrypoint to run Snyk scan with options
+ENTRYPOINT ["snyk"]
