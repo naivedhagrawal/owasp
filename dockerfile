@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     software-properties-common \
     gnupg \
+    wget \
     maven \
     gradle \
     && rm -rf /var/lib/apt/lists/*
