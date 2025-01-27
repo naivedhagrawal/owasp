@@ -25,6 +25,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get update && apt-get install -y terraform \
     && rm -rf /var/lib/apt/lists/*
 
+# Add OpenJDK repository (this is the fix)
+RUN apt-get install -y openjdk-11-jdk --no-install-recommends
+
 # Install Docker CLI (docker-ce-cli)
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list \
