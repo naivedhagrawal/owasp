@@ -23,8 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     maven \
     gradle \
-    wget \ # Add wget here
-    && rm -rf /var/lib/apt/lists/*
+    wget \
+    && rm -rf /var/lib/apt/lists/* # Correct placement of &&
 
 # Install .NET SDK 6.0
 RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
@@ -52,8 +52,11 @@ RUN groupadd -r snyk && useradd -r -g snyk snyk
 # Add snyk user to docker group (AFTER Docker installation)
 RUN usermod -aG docker snyk
 
-# Install Snyk CLI globally
+# Install Snyk CLI globally (using build argument)
+ARG SNYK_TOKEN
+RUN npm config set '@snyk:registry' 'https://registry.npmjs.org/'
 RUN npm install -g snyk@latest
+RUN snyk config set token $SNYK_TOKEN
 
 # Switch to the non-root user
 USER snyk
