@@ -1,20 +1,36 @@
-# Use a base image with Node.js
-FROM node:18-alpine
+# Base image with Node.js (Slim Debian-based)
+FROM node:18-slim
 
-# Accept the Snyk token as a build argument
-ARG SNYK_TOKEN
-
-# Set the Snyk token as an environment variable
-ENV SNYK_TOKEN=${SNYK_TOKEN}
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    git \
+    openjdk-11-jdk \
+    maven \
+    ruby-full \
+    golang \
+    php-cli \
+    curl \
+    jq \
+    docker-ce-cli \
+    build-essential \
+    libffi-dev \
+    unzip \
+    && pip3 install --upgrade pip \
+    && pip3 install ansible-lint cfn-lint checkov \
+    && gem install bundler \
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    && curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" > /etc/apt/sources.list.d/hashicorp.list \
+    && apt-get update && apt-get install -y terraform \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Snyk CLI globally
 RUN npm install -g snyk
 
-# Authenticate with Snyk using the token
-RUN snyk auth $SNYK_TOKEN
+# Expose default working directory for scans
+WORKDIR /workspace
 
-# Set a default working directory
-WORKDIR /app
-
-# Default command (optional)
-CMD [ "snyk", "--help" ]
+# Default command to display Snyk version and instructions
+CMD ["sh", "-c", "echo 'Snyk CLI is installed. Use it in your Jenkins pipeline or manually from this container.' && snyk --version"]
