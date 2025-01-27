@@ -2,7 +2,7 @@ FROM debian:stable-slim
 
 WORKDIR /app
 
-# Install essential dependencies, including wget
+# Install essential dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     python3 \
@@ -24,12 +24,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     maven \
     gradle \
     wget \
-    && rm -rf /var/lib/apt/lists/* # Correct placement of &&
+    && rm -rf /var/lib/apt/lists/*
 
-# Install .NET SDK 6.0
+# Install .NET SDK (using latest LTS)
 RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
     && chmod +x dotnet-install.sh \
-    && ./dotnet-install.sh --channel 6.0 \
+    && ./dotnet-install.sh --channel lts \ # Use latest LTS
     && rm dotnet-install.sh
 
 ENV DOTNET_ROOT="/root/.dotnet"
@@ -52,11 +52,12 @@ RUN groupadd -r snyk && useradd -r -g snyk snyk
 # Add snyk user to docker group (AFTER Docker installation)
 RUN usermod -aG docker snyk
 
-# Install Snyk CLI globally (using build argument)
+# Install Snyk CLI globally (using build argument and cleaning npm cache)
 ARG SNYK_TOKEN
-RUN npm config set '@snyk:registry' 'https://registry.npmjs.org/'
-RUN npm install -g snyk@latest
-RUN snyk config set token $SNYK_TOKEN
+RUN npm config set '@snyk:registry' 'https://registry.npmjs.org/' \
+    && npm install -g snyk@latest \
+    && npm cache clean --force \
+    && snyk config set token $SNYK_TOKEN
 
 # Switch to the non-root user
 USER snyk
