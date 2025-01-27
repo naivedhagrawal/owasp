@@ -21,8 +21,11 @@ RUN apk add --no-cache \
 # Step 3: Install Ruby (testing this package first)
 RUN apk add --no-cache ruby && rm -rf /var/cache/apk/*
 
-# Step 4: Install Golang (testing this package after Ruby)
-RUN apk add --no-cache golang && rm -rf /var/cache/apk/*
+# Step 4: Manually Install Golang
+RUN curl -fsSL https://golang.org/dl/go1.18.6.linux-amd64.tar.gz -o go.tar.gz \
+    && tar -C /usr/local -xzf go.tar.gz \
+    && rm go.tar.gz \
+    && ln -s /usr/local/go/bin/go /usr/bin/go
 
 # Step 5: Install Maven separately (if still required)
 RUN apk add --no-cache maven && rm -rf /var/cache/apk/*
