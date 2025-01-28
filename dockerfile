@@ -1,5 +1,8 @@
 FROM openjdk:11-jre-slim
 
+# Declare build argument for NVD API key
+ARG NVD_API_KEY
+
 # Install dependencies and dependency-check
 RUN apt-get update && \
     apt-get install -y wget unzip && \
