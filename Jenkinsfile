@@ -12,7 +12,7 @@ pipeline {
             steps {
                 container('docker') {
                     sh """
-                    docker build --build -t owasp-dep:latest .
+                    docker build -t owasp-dep:latest .
                     """
                 }
             }
@@ -24,7 +24,7 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'docker_hub_up', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh '''
                         docker login -u $USERNAME -p $PASSWORD
-                        docker tag snyk-image:latest naivedh/owasp-dep:latest
+                        docker tag owasp-dep:latest naivedh/owasp-dep:latest
                         docker push naivedh/owasp-dep:latest
                         '''
                     }
