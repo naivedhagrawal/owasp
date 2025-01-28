@@ -1,65 +1,16 @@
-FROM debian:stable-slim
+FROM owasp/dependency-check:latest
 
-# Set working directory
-WORKDIR /workspace
+# Install dependency-check
+RUN apt-get update && \
+    apt-get install -y wget unzip && \
+    wget https://github.com/jeremylong/DependencyCheck/releases/download/v6.5.3/dependency-check-6.5.3-release.zip && \
+    unzip dependency-check-6.5.3-release.zip -d /opt && \
+    ln -s /opt/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check && \
+    rm dependency-check-6.5.3-release.zip
 
-# Install essential dependencies and language toolchains
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    python3 python3-pip python3-venv \
-    make \
-    g++ \
-    nodejs \
-    npm \
-    default-jre-headless \
-    ruby \
-    golang \
-    bash \
-    curl \
-    zip \
-    unzip \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    maven \
-    gradle \
-    wget \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Clean up
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install .NET SDK (latest LTS)
-RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh \
-    && chmod +x dotnet-install.sh \
-    && ./dotnet-install.sh --channel lts \
-    && rm dotnet-install.sh
-
-# Set environment variables for .NET
-ENV DOTNET_ROOT="/root/.dotnet"
-ENV PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
-
-# Add Docker GPG key and repository for Docker CLI support
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
-    > /etc/apt/sources.list.d/docker.list
-
-# Install Docker CLI
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    docker-ce-cli \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install Snyk CLI globally
-RUN npm install -g snyk@latest && npm cache clean --force
-
-# Create a non-root user for running Snyk
-RUN groupadd -r snyk && useradd -r -g snyk snyk
-
-# Switch to non-root user
-USER snyk
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD snyk --version || exit 1
-
-# Entrypoint to default to Snyk commands
-ENTRYPOINT ["snyk"]
-
-# Default command
-CMD ["--help"]
+# Set the entrypoint
+ENTRYPOINT ["/usr/local/bin/dependency-check"]
