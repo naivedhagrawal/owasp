@@ -25,7 +25,7 @@ pipeline {
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId: 'docker_hub_up', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh '''
-                        docker login -u $USERNAME -p $PASSWORD
+                        echo $PASSWORD | docker login -u $USERNAME --password-stdin
                         docker tag owasp-dep:latest naivedh/owasp-dep:latest
                         docker push naivedh/owasp-dep:latest
                         '''
