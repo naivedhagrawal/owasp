@@ -3,6 +3,7 @@ pipeline {
     agent {
         kubernetes {
             yaml docker()
+            showRawYaml false
         }
     }
 
