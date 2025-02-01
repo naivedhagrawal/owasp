@@ -2,11 +2,11 @@
 pipeline {
     agent none
     environment {
-        IMAGE_NAME = "owasp-dep"
+        IMAGE_NAME = "owasp-dependency"
         IMAGE_TAG = "latest"
-        DOCKER_HUB_REPO = "naivedh/owasp-dep"
+        DOCKER_HUB_REPO = "naivedh/owasp-dependency"
         DOCKER_CREDENTIALS = "docker_hub_up"
-        REPORT_FILE = "owasp-dependency-report.json"
+        REPORT_FILE = "trivy-report.json"
     }
 
     stages {
